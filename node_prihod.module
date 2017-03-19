@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @file
+ * Module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node_prihod\Controller\Prihod;
+
+/**
+ * Node_prihod_entity_presave.
+ */
+function node_prihod_entity_presave(EntityInterface $node) {
+  if (method_exists($node, 'getType') && $node->getType() == 'prihod') {
+    if (!$node->title->value || TRUE) {
+      $postavshik = ' --- ';
+      if (is_object($node->field_prihod_ref_partner->entity)) {
+        $postavshik = $node->field_prihod_ref_partner->entity->title->value;
+      }
+      $date = strtotime($node->field_prihod_date->value);
+      $title = 'Приход бревна от ' . $postavshik . ' / ' . format_date($date, 'long');
+      $node->title->setValue($title);
+    }
+  }
+}
+
+/**
+ * Node_prihod_entity_view.
+ */
+function node_prihod_entity_view(array &$build, EntityInterface $entity, $display, $view_mode) {
+  if (method_exists($entity, 'getType') && $entity->getType() == 'prihod') {
+    $kub = Prihod::kubatura($entity);
+    $entity->field_prihod_kubatura->setValue($kub);
+    $build['prihod_view'] = [
+      '#markup' => '<span class="kub">Кубатура 1-го бревна: </span>' . number_format($kub, 2, ",", " ") . ' куб.м',
+    ];
+    $entity->save(TRUE);
+  }
+}
